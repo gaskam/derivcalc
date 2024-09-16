@@ -341,6 +341,7 @@ def main():
         tokens = tokenize(expression)
         tokens_with_implicit_mult = add_implicit_multiplication(tokens)
         postfix = shunting_yard(tokens_with_implicit_mult)
+        print("RPN: ", postfix)
         derivative(0, len(postfix)-1, postfix)
         # siplified = simplify(derivat)
         infix_notation = algebric_notation(derivat)
