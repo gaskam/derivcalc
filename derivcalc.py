@@ -286,7 +286,7 @@ def derivative(lwb: int, upb: int, postfix: list) -> list:
             else:
                 u = postfix[lwb:middle]
                 v = postfix[middle:upb]
-                expression = v + u + ["ln"]
+                expression = v + u + ["log", "*"]
                 derivative(0, len(expression) - 1, expression)
                 derivat.extend(expression + ["exp", "*"])
 
@@ -297,9 +297,6 @@ def derivative(lwb: int, upb: int, postfix: list) -> list:
         else:
             derivat.append("0")               
 
-# def simplify(derivat: list) -> list:
-#     pass
-
 def algebric_notation(derivat: list) -> str:
     stack = []
     for token in derivat:
@@ -307,13 +304,38 @@ def algebric_notation(derivat: list) -> str:
             b = stack.pop()
             a = stack.pop()
             if token == '+' or token == '-':
-                stack.append(a + " " +  token + " " + b)
+                if is_number(a) and is_number(b):
+                    stack.append(str(eval(a + token + b)))
+                else:
+                    stack.append(a + " " +  token + " " + b)
             elif token == '*':
-                stack.append(a + "*" + b)
+                if a == "0" or b == "0":
+                    stack.append("0")
+                elif is_number(a) and is_number(b):
+                    stack.append(str(eval(a + token + b)))
+                else:
+                    stack.append(a + "*" + b)
             elif token == '/':
-                stack.append(a + "/" + b)
+                assert b != "0"
+                if a == "0":
+                    stack.append("0")
+                elif b == "1":
+                    stack.append(a)
+                elif is_number(a) and is_number(b) and a%b==0:
+                    stack.append(str(a // b))
+                else:
+                    stack.append(a + "/" + b)
             elif token == '^':
-                stack.append(a + "^" + b)
+                if a == "0":
+                    stack.append("0")
+                elif b == "0":
+                    stack.append("1")
+                elif b == "1":
+                    stack.append(a)
+                elif is_number(a) and is_number(b):
+                    stack.append(str(a ** b))
+                else: 
+                    stack.append(a + "^" + b)
         elif token in FUNCTIONS:
             if token == 'neg':
                 a = stack.pop()
@@ -338,7 +360,7 @@ def main():
         postfix = shunting_yard(tokens_with_implicit_mult)
         print("RPN: ", postfix)
         derivative(0, len(postfix)-1, postfix)
-        # siplified = simplify(derivat)
+        print("RPNderivat: ", derivat)
         infix_notation = algebric_notation(derivat)
         print("Derivative: ", infix_notation, "\n\n", 30*'-', "\n")
         derivat.clear()

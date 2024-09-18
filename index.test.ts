@@ -3,16 +3,17 @@ import { expect, test, beforeAll, describe } from "bun:test";
 const filename = "derivcalc.py";
 
 // @ts-ignore
-import texte from "./derivcalc.py" with { type: "text" };
+import text from "./derivcalc.py" with { type: "text" };
 
 beforeAll(() => {
-    texte;
+    text;
 });
 
-async function runTest(input: string): Promise<{ rpn: string, derivative: string }> {
+async function runTest(input: string): Promise<{ rpn: string, rpnDerivat: string, derivative: string }> {
     const output = await Bun.$`echo "${input}" | python3 ${filename}`.text();
 
     const rpnMatch = output.match(/RPN: (.+)/);
+    const rpnDerivatMatch = output.match(/RPNderivat: (.+)/);
     const derivativeMatch = output.match(/Derivative: (.+)/);
 
     // if (!rpnMatch || !derivativeMatch) {
@@ -21,6 +22,7 @@ async function runTest(input: string): Promise<{ rpn: string, derivative: string
 
     return {
         rpn: rpnMatch ? rpnMatch[1].trim() : "",
+        rpnDerivat: rpnDerivatMatch ? rpnDerivatMatch[1].trim() : "",
         derivative: derivativeMatch ? derivativeMatch[1].trim() : ""
     };
 }
@@ -29,6 +31,9 @@ describe("Parentheses", async () => {
     const result = await runTest("(127)");
     test("RPN", async () => {
         expect(result.rpn).toBe("['127']");
+    });
+    test("RPNderivat", async () => {
+        expect(result.rpnDerivat).toBe("['0']");
     });
     test("Derivative", async () => {
         expect(result.derivative).toBe("0");
@@ -118,7 +123,7 @@ describe("Function", async () => {
 describe("Constants", async () => {
     const result = await runTest("π+e");
     test("RPN", async () => {
-        expect(result.rpn).toBe("['π', 'e', '+']");
+        expect(result.rpn).toBe("['�', 'e', '+']");
     });
     test("Derivative", async () => {
         expect(result.derivative).toBe("0");
@@ -148,7 +153,7 @@ describe("Negative Variables", async () => {
 describe("Complex", async () => {
     const result = await runTest("2π*sqrt(m/k)^(sqrt(1)/-2)");
     test("RPN", async () => {
-        expect(result.rpn).toBe("['2', 'π', '*', 'm', 'k', '/', 'sqrt', '1', 'sqrt', '-2', '/', '^', '*']");
+        expect(result.rpn).toBe("['2', '�', '*', 'm', 'k', '/', 'sqrt', '1', 'sqrt', '-2', '/', '^', '*']");
     });
     test.todo("Derivative", async () => {
         expect(result.derivative).toBe("0");
@@ -168,7 +173,7 @@ describe("Madness", async () => {
 describe("Satan", async () => {
     const result = await runTest("-16-sqrt(-sin(log((π+e^x)^2)/-5))");
     test("RPN", async () => {
-        expect(result.rpn).toBe("['-16', '-1', '-1', 'π', 'e', 'x', '^', '+', '2', '^', 'log', '-5', '/', 'sin', '*', 'sqrt', '*', '+']");
+        expect(result.rpn).toBe("['-16', '-1', '-1', '�', 'e', 'x', '^', '+', '2', '^', 'log', '-5', '/', 'sin', '*', 'sqrt', '*', '+']");
     });
     test.todo("Derivative", async () => {
         expect(result.derivative).toBe("-(e^x * cos((2 * ln(e^x + π)) / 5)) / (5 * (e^x + π) * sqrt(sin((2 * ln(e^x + π)) / 5)))");
