@@ -1,3 +1,4 @@
+DEVMODE = False
 PRECEDENCES = {'+': 1, '-': 1, '*': 2, '/': 2, '^': 3}
 FUNCTIONS = ('sin', 'cos', 'tan', 'log', 'exp', 'sqrt', 'ctg', 'neg')
 OPERATORS = ('+', '-', '*', '/', '^')
@@ -349,7 +350,8 @@ def algebric_notation(derivat: list) -> str:
     return stack[0] if stack else ""
 
 def credits():
-    print("Derivative Calculator © 2024 Gaskam.com - All rights reserved.\nProgrammed by Leys Kamil and Lebaube Gaspard - github.com/gaskam-com\nInspired by 'SYMBOLIC DERIVATION WITHOUT USING EXPRESSION TREES (2001)' by V. KRTOLICA and S. STANIMIROVIC\n\nFor more information, visit github.com/gaskam-com/derivcalc\n\nEnjoy! :)\n")
+    if not DEVMODE:
+        print("Derivative Calculator © 2024 Gaskam.com - All rights reserved.\nProgrammed by Leys Kamil and Lebaube Gaspard - github.com/gaskam-com\nInspired by 'SYMBOLIC DERIVATION WITHOUT USING EXPRESSION TREES (2001)' by V. KRTOLICA and S. STANIMIROVIC\n\nFor more information, visit github.com/gaskam-com/derivcalc\n\nEnjoy! :)\n")
 
 def main():
     credits()
@@ -358,9 +360,11 @@ def main():
         tokens = tokenize(expression)
         tokens_with_implicit_mult = add_implicit_multiplication(tokens)
         postfix = shunting_yard(tokens_with_implicit_mult)
-        print("RPN: ", postfix)
+        if DEVMODE:
+            print("RPN: ", postfix)
         derivative(0, len(postfix)-1, postfix)
-        print("RPNderivat: ", derivat)
+        if DEVMODE:
+            print("RPNderivat: ", derivat)
         infix_notation = algebric_notation(derivat)
         print("Derivative: ", infix_notation, "\n\n", 30*'-', "\n")
         derivat.clear()

@@ -45,6 +45,9 @@ describe("Subtraction", async () => {
     test("RPN", async () => {
         expect(result.rpn).toBe("['3', '-4', '+', '-1', '5', '-6', '+', '*', '+']");
     });
+    test("RPNderivat", async () => {
+        expect(result.rpnDerivat).toBe("['0']");
+    });
     test.todo("Derivative", async () => {
         expect(result.derivative).toBe("0");
     });
@@ -54,6 +57,9 @@ describe("Multiplication", async () => {
     const result = await runTest("3*4*(5*6)");
     test("RPN", async () => {
         expect(result.rpn).toBe("['3', '4', '*', '5', '6', '*', '*']");
+    });
+    test("RPNderivat", async () => {
+        expect(result.rpnDerivat).toBe("['0']");
     });
     test.todo("Derivative", async () => {
         expect(result.derivative).toBe("0");
@@ -65,6 +71,9 @@ describe("Division", async () => {
     test("RPN", async () => {
         expect(result.rpn).toBe("['3', '4', '/', '5', '6', '/', '/']");
     });
+    test("RPNderivat", async () => {
+        expect(result.rpnDerivat).toBe("['0']");
+    });
     test.todo("Derivative", async () => {
         expect(result.derivative).toBe("0");
     });
@@ -74,6 +83,9 @@ describe("Wikipedia", async () => {
     const result = await runTest("(3+4)(5/6)");
     test("RPN", async () => {
         expect(result.rpn).toBe("['3', '4', '+', '5', '6', '/', '*']");
+    });
+    test("RPNderivat", async () => {
+        expect(result.rpnDerivat).toBe("['0']");
     });
     test.todo("Derivative", async () => {
         expect(result.derivative).toBe("0");
@@ -85,6 +97,9 @@ describe("Exponentiation", async () => {
     test("RPN", async () => {
         expect(result.rpn).toBe("['3', '4', '5', '6', '^', '^', '^']");
     });
+    test("RPNderivat", async () => {
+        expect(result.rpnDerivat).toBe("['0']");
+    });
     test.todo("Derivative", async () => {
         expect(result.derivative).toBe("0");
     });
@@ -94,6 +109,9 @@ describe("Float", async () => {
     const result = await runTest("2.57+3.25^37.1");
     test("RPN", async () => {
         expect(result.rpn).toBe("['2.57', '3.25', '37.1', '^', '+']");
+    });
+    test("RPNderivat", async () => {
+        expect(result.rpnDerivat).toBe("['0']");
     });
     test.todo("Derivative", async () => {
         expect(result.derivative).toBe("0");
@@ -105,6 +123,9 @@ describe("Negative", async () => {
     test("RPN", async () => {
         expect(result.rpn).toBe("['-3', '4', '-6', '5', '+', '*', '+']");
     });
+    test("RPNderivat", async () => {
+        expect(result.rpnDerivat).toBe("['0']");
+    });
     test.todo("Derivative", async () => {
         expect(result.derivative).toBe("0");
     });
@@ -114,6 +135,9 @@ describe("Function", async () => {
     const result = await runTest("(sin(3)+cos(4)*tan(5))/sqrt(6)");
     test("RPN", async () => {
         expect(result.rpn).toBe("['3', 'sin', '4', 'cos', '5', 'tan', '*', '+', '6', 'sqrt', '/']");
+    });
+    test("RPNderivat", async () => {
+        expect(result.rpnDerivat).toBe("['0']");
     });
     test.todo("Derivative", async () => {
         expect(result.derivative).toBe("0");
@@ -125,6 +149,9 @@ describe("Constants", async () => {
     test("RPN", async () => {
         expect(result.rpn).toBe("['�', 'e', '+']");
     });
+    test("RPNderivat", async () => {
+        expect(result.rpnDerivat).toBe("['0']");
+    });
     test("Derivative", async () => {
         expect(result.derivative).toBe("0");
     });
@@ -134,6 +161,9 @@ describe("Variables", async () => {
     const result = await runTest("a+b(c-d)");
     test("RPN", async () => {
         expect(result.rpn).toBe("['a', 'b', 'c', '-1', 'd', '*', '+', '*', '+']");
+    });
+    test("RPNderivat", async () => {
+        expect(result.rpnDerivat).toBe("['0']");
     });
     test.todo("Derivative", async () => {
         expect(result.derivative).toBe("0");
@@ -145,6 +175,9 @@ describe("Negative Variables", async () => {
     test("RPN", async () => {
         expect(result.rpn).toBe("['-1', 'a', '*', '-1', 'b', '*', '-1', 'c', '*', 'd', '+', '*', '+']");
     });
+    test("RPNderivat", async () => {
+        expect(result.rpnDerivat).toBe("['0']");
+    });
     test.todo("Derivative", async () => {
         expect(result.derivative).toBe("0");
     });
@@ -154,6 +187,9 @@ describe("Complex", async () => {
     const result = await runTest("2π*sqrt(m/k)^(sqrt(1)/-2)");
     test("RPN", async () => {
         expect(result.rpn).toBe("['2', '�', '*', 'm', 'k', '/', 'sqrt', '1', 'sqrt', '-2', '/', '^', '*']");
+    });
+    test("RPNderivat", async () => {
+        expect(result.rpnDerivat).toBe("['0']");
     });
     test.todo("Derivative", async () => {
         expect(result.derivative).toBe("0");
@@ -165,6 +201,9 @@ describe("Madness", async () => {
     test("RPN", async () => {
         expect(result.rpn).toBe("['-1', 'x', '5', '+', '*']");
     });
+    test("RPNderivat", async () => {
+        expect(result.rpnDerivat).toBe("['-1']");
+    });
     test("Derivative", async () => {
         expect(result.derivative).toBe("-1");
     });
@@ -174,6 +213,9 @@ describe("Satan", async () => {
     const result = await runTest("-16-sqrt(-sin(log((π+e^x)^2)/-5))");
     test("RPN", async () => {
         expect(result.rpn).toBe("['-16', '-1', '-1', '�', 'e', 'x', '^', '+', '2', '^', 'log', '-5', '/', 'sin', '*', 'sqrt', '*', '+']");
+    });
+    test.todo("RPNderivat", async () => {
+        expect(result.rpnDerivat).toBe("['']")
     });
     test.todo("Derivative", async () => {
         expect(result.derivative).toBe("-(e^x * cos((2 * ln(e^x + π)) / 5)) / (5 * (e^x + π) * sqrt(sin((2 * ln(e^x + π)) / 5)))");
