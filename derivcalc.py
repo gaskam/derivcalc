@@ -284,17 +284,12 @@ def derivative(lwb: int, upb: int, postfix: list) -> list:
             elif postfix[middle - 1] == "1":
                 derivat.append("0")
             else:
-                derivat.extend(postfix[middle:upb])
-                
-                derivative(lwb, middle - 1, postfix)
+                u = postfix[lwb:middle]
+                v = postfix[middle:upb]
+                expression = v + u + ["ln"]
+                derivative(0, len(expression) - 1, expression)
+                derivat.extend(expression + ["exp", "*"])
 
-                if derivat[-1] == "1":
-                    derivat.pop()
-                else:
-                    derivat.append("*")
-
-                derivat.extend(postfix[lwb:upb])
-                derivat.extend(("1", "-", "^", "*"))    
 
     else:
         if postfix[upb] == "x":
