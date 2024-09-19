@@ -1,9 +1,17 @@
-DEVMODE = False
+if __name__ == "__main__":
+    DEVMODE = True
+else:
+    DEVMODE = False
+
 PRECEDENCES = {'+': 1, '-': 1, '*': 2, '/': 2, '^': 3}
 FUNCTIONS = ('sin', 'cos', 'tan', 'log', 'exp', 'sqrt', 'ctg', 'neg')
 OPERATORS = ('+', '-', '*', '/', '^')
 
 derivat = []
+
+def log(*values, sep = " ", end = "\n"):
+    if DEVMODE:
+        print(*values, sep=sep, end=end)
 
 def is_operator(token):
     return token in PRECEDENCES
@@ -12,6 +20,11 @@ def is_function(token):
     return token in FUNCTIONS
 
 def is_number(token):
+    if isinstance(token, list):
+        for i in token:
+            if not is_number(i):
+                return False
+        return True
     try:
         float(token)
         return True
@@ -298,6 +311,39 @@ def derivative(lwb: int, upb: int, postfix: list) -> list:
         else:
             derivat.append("0")               
 
+def calculate(numbers: list, operator: str) -> str:
+    result = float(numbers[0])
+    for num in numbers[1:]:
+        if operator == '+':
+            result += float(num)
+        elif operator == '-':
+            result -= float(num)
+        elif operator == '*':
+            result *= float(num)
+        elif operator == '/':
+            try:
+                if result % float(num) == 0:
+                    result = int(result / float(num))
+                else:
+                    result = "(" + str(result) + "/" + str(num) + ")" # find a way to simplify
+            except ZeroDivisionError:
+                return "0"
+    return str(result)
+
+def simplify(derivat: list) -> list:
+    if len(derivat) <= 2:
+        return derivat
+
+    for i in range(len(derivat)):
+        if derivat[i] in OPERATORS:
+            lgb = LGB(derivat, i)
+            numbers_to_calculate = derivat[lgb:i]
+            result = calculate(numbers_to_calculate, derivat[i])
+            simplified = derivat[:lgb] + [result] + derivat[i+1:]
+            return simplify(simplified)
+
+    return derivat
+
 def algebric_notation(derivat: list) -> str:
     stack = []
     for token in derivat:
@@ -347,7 +393,7 @@ def algebric_notation(derivat: list) -> str:
         else:
             stack.append(token)
     
-    return stack[0] if stack else ""
+    return stack[0] if stack else "0"
 
 def credits():
     if not DEVMODE:
@@ -360,12 +406,10 @@ def main():
         tokens = tokenize(expression)
         tokens_with_implicit_mult = add_implicit_multiplication(tokens)
         postfix = shunting_yard(tokens_with_implicit_mult)
-        if DEVMODE:
-            print("RPN: ", postfix)
-        derivative(0, len(postfix)-1, postfix)
-        if DEVMODE:
-            print("RPNderivat: ", derivat)
-        infix_notation = algebric_notation(derivat)
+        log("RPN: ", postfix)
+        # derivative(0, len(postfix)-1, postfix)
+        # log("RPNderivat: ", derivat)
+        infix_notation = algebric_notation(simplify(postfix))
         print("Derivative: ", infix_notation, "\n\n", 30*'-', "\n")
         derivat.clear()
 
