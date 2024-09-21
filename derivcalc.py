@@ -360,7 +360,6 @@ class Fraction:
             else:
                 return Fraction(self.denominator ** -power, self.numerator ** -power)
         else:
-            # For non-integer powers, convert to float and use standard pow function
             return pow(float(self), power)
 
     def __float__(self):
@@ -384,8 +383,97 @@ def calculate(numbers: list, operator: str) -> str:
         elif operator == '/':
             result /= num
         elif operator == '^':
-            result = result ** float(num)  # Using float for power to handle fractional exponents
+            result = result ** float(num)
     return str(result)
+
+def calcList(var: list, operator: str, nums=None, variables=None) -> list:
+    if nums is None:
+        nums = []
+    if variables is None:
+        variables = []
+
+    try:
+        if len(var) > 2 and isinstance(var[1], list):
+            nums.append(var[0])
+            calcList(var[1], operator, nums, variables)
+            variables.append(var[2])
+        else:
+            nums.append(var[0])
+            variables.extend(var[1:])
+    except IndexError:
+        nums.append(var[0])
+        variables.extend(var[1:])
+
+    log("List: ", var)
+    log("Numbers:", nums)
+    log("Variables:", variables)
+
+    if len(variables) == 1:
+        variables = variables[0]
+
+    return [calculate(nums, operator), variables]
+
+''' 
+def simplify(derivat: list) -> list:
+    if len(derivat) <= 2:
+        return derivat
+
+    for i in range(len(derivat)):
+        if derivat[i] in OPERATORS:
+            lgb = LGB(derivat, i)
+            terms = derivat[lgb:i]
+            if derivat[i] == '*' or derivat[i] == '/':
+                if derivat[i] == '*' and "0" in terms:
+                    return ["0"]
+                elif all(is_number(term) for term in terms):
+                    result = calculate(terms, derivat[i])
+                    simplified = derivat[:lgb] + [result] + derivat[i+1:]
+                    return simplify(simplified)
+                else:
+                    variables = []
+                    numbers = []
+                    for term in terms:
+                        if isinstance(term, list):
+                            result = calcList(term, derivat[i])
+                            numbers.append(result[0])
+                            variables.extend(result[1] if isinstance(result[1], list) else [result[1]])
+                        elif is_variable(term):
+                            variables.append(term)
+                        else:
+                            numbers.append(term)
+                    
+                    if len(numbers) == 0:
+                        numbers = ["1"]
+                    
+                    numeric_result = calculate(numbers, derivat[i])
+                    
+                    if len(variables) == 0:
+                        result = [numeric_result]
+                    elif len(variables) == 1:
+                        result = [[numeric_result] + [variables[0]]]
+                    else:
+                        var_counts = {}
+                        for var in variables:
+                            if var in var_counts:
+                                var_counts[var] += 1
+                            else:
+                                var_counts[var] = 1
+                        
+                        combined_vars = []
+                        for var, count in var_counts.items():
+                            if count == 1:
+                                combined_vars.append(var)
+                            else:
+                                combined_vars.append(f"{var}^{count}")
+                        
+                        result = [[numeric_result] + [''.join(combined_vars)]]
+                    
+                    simplified = derivat[:lgb] + result + derivat[i+1:]
+                    return simplify(simplified)
+            # TODO Handle other operators ('+', '-', '^') here
+
+    return derivat
+'''
 
 def simplify(derivat: list) -> list:
     if len(derivat) <= 2:
@@ -394,41 +482,106 @@ def simplify(derivat: list) -> list:
     for i in range(len(derivat)):
         if derivat[i] in OPERATORS:
             lgb = LGB(derivat, i)
-            numbers = derivat[lgb:i]
-            result = calculate(numbers, derivat[i])
-            simplified = derivat[:lgb] + [result] + derivat[i+1:]
-            return simplify(simplified)
+            terms = derivat[lgb:i]
+            if derivat[i] in OPERATORS:
+                if derivat[i] == '*' and "0" in terms:
+                    return ["0"]
+                elif all(is_number(term) for term in terms):
+                    result = calculate(terms, derivat[i])
+                    simplified = derivat[:lgb] + [result] + derivat[i+1:]
+                    return simplify(simplified)
+                else:
+                    variables = []
+                    numbers = []
+                    for term in terms:
+                        if isinstance(term, list):
+                            result = calcList(term, derivat[i])
+                            numbers.append(result[0])
+                            variables.extend(result[1] if isinstance(result[1], list) else [result[1]])
+                        elif is_variable(term):
+                            variables.append(term)
+                        else:
+                            numbers.append(term)
+                    
+                    if len(numbers) == 0:
+                        numbers = ["1"] if derivat[i] in ('*', '/') else ["0"]
+                    
+                    numeric_result = calculate(numbers, derivat[i])
+                    
+                    if derivat[i] in ('+', '-'):
+                        if variables:
+                            result = [[numeric_result] + variables]
+                        else:
+                            result = [numeric_result]
+                    elif derivat[i] == '^':
+                        if len(variables) == 1:
+                            result = [[numeric_result] + [f"{variables[0]}^{terms[-1]}"]]
+                        else:
+                            result = [f"({numeric_result})^{terms[-1]}"]
+                    else:  # '*' or '/'
+                        if len(variables) == 0:
+                            result = [numeric_result]
+                        elif len(variables) == 1:
+                            result = [[numeric_result] + [variables[0]]]
+                        else:
+                            var_counts = {}
+                            for var in variables:
+                                if var in var_counts:
+                                    var_counts[var] += 1
+                                else:
+                                    var_counts[var] = 1
+                            
+                            combined_vars = []
+                            for var, count in var_counts.items():
+                                if count == 1:
+                                    combined_vars.append(var)
+                                else:
+                                    combined_vars.append(f"{var}^{count}")
+                            
+                            result = [[numeric_result] + [''.join(combined_vars)]]
+                    
+                    simplified = derivat[:lgb] + result + derivat[i+1:]
+                    return simplify(simplified)
 
     return derivat
 
 def algebric_notation(derivat: list) -> str:
     stack = []
     for token in derivat:
-        if token in OPERATORS:
+        if isinstance(token, list):
+            if len(token) == 2 and is_number(token[0]):
+                coefficient = token[0]
+                variable = token[1]
+                if coefficient == "1":
+                    stack.append(variable)
+                elif coefficient == "-1":
+                    stack.append(f"-{variable}")
+                else:
+                    stack.append(f"{coefficient}*{variable}")
+            else:
+                stack.append(algebric_notation(token))
+        elif token in OPERATORS:
             b = stack.pop()
             a = stack.pop()
             if token == '+' or token == '-':
-                if is_number(a) and is_number(b):
-                    stack.append(str(eval(a + token + b)))
-                else:
-                    stack.append(a + " " +  token + " " + b)
+                stack.append(f"({a} {token} {b})")
             elif token == '*':
                 if a == "0" or b == "0":
                     stack.append("0")
-                elif is_number(a) and is_number(b):
-                    stack.append(str(eval(a + token + b)))
+                elif a == "1":
+                    stack.append(b)
+                elif b == "1":
+                    stack.append(a)
                 else:
-                    stack.append(a + "*" + b)
+                    stack.append(f"{a}*{b}")
             elif token == '/':
                 assert b != "0"
                 if a == "0":
                     stack.append("0")
                 elif b == "1":
                     stack.append(a)
-                elif is_number(a) and is_number(b) and a%b==0:
-                    stack.append(str(a // b))
                 else:
-                    stack.append(a + "/" + b)
+                    stack.append(f"{a}/{b}")
             elif token == '^':
                 if a == "0":
                     stack.append("0")
@@ -436,17 +589,15 @@ def algebric_notation(derivat: list) -> str:
                     stack.append("1")
                 elif b == "1":
                     stack.append(a)
-                elif is_number(a) and is_number(b):
-                    stack.append(str(a ** b))
-                else: 
-                    stack.append(a + "^" + b)
+                else:
+                    stack.append(f"{a}^{b}")
         elif token in FUNCTIONS:
             if token == 'neg':
                 a = stack.pop()
-                stack.append("-" + a)
+                stack.append(f"-{a}")
             else:
                 a = stack.pop()
-                stack.append(token + "(" + a + ")")
+                stack.append(f"{token}({a})")
         else:
             stack.append(token)
     
