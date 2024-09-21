@@ -1,3 +1,5 @@
+from math import gcd
+
 if __name__ == "__main__":
     DEVMODE = True
 else:
@@ -311,23 +313,78 @@ def derivative(lwb: int, upb: int, postfix: list) -> list:
         else:
             derivat.append("0")               
 
+class Fraction:
+    def __init__(self, numerator, denominator=1):
+        if isinstance(numerator, str) and '/' in numerator:
+            numerator, denominator = map(int, numerator.split('/'))
+        else:
+            numerator = int(numerator)
+            denominator = int(denominator)
+        
+        if denominator == 0:
+            raise ValueError("Denominator cannot be zero")
+        
+        if denominator < 0:
+            numerator, denominator = -numerator, -denominator
+        
+        common = gcd(numerator, denominator)
+        self.numerator = numerator // common
+        self.denominator = denominator // common
+
+    def __add__(self, other):
+        if isinstance(other, (int, float)):
+            other = Fraction(other)
+        return Fraction(self.numerator * other.denominator + other.numerator * self.denominator,
+                        self.denominator * other.denominator)
+
+    def __sub__(self, other):
+        if isinstance(other, (int, float)):
+            other = Fraction(other)
+        return Fraction(self.numerator * other.denominator - other.numerator * self.denominator,
+                        self.denominator * other.denominator)
+
+    def __mul__(self, other):
+        if isinstance(other, (int, float)):
+            other = Fraction(other)
+        return Fraction(self.numerator * other.numerator, self.denominator * other.denominator)
+
+    def __truediv__(self, other):
+        if isinstance(other, (int, float)):
+            other = Fraction(other)
+        return Fraction(self.numerator * other.denominator, self.denominator * other.numerator)
+
+    def __pow__(self, power):
+        if isinstance(power, int):
+            if power >= 0:
+                return Fraction(self.numerator ** power, self.denominator ** power)
+            else:
+                return Fraction(self.denominator ** -power, self.numerator ** -power)
+        else:
+            # For non-integer powers, convert to float and use standard pow function
+            return pow(float(self), power)
+
+    def __float__(self):
+        return self.numerator / self.denominator
+
+    def __str__(self):
+        if self.denominator == 1:
+            return str(self.numerator)
+        return f"{self.numerator}/{self.denominator}"
+
 def calculate(numbers: list, operator: str) -> str:
-    result = float(numbers[0])
+    result = Fraction(numbers[0])
     for num in numbers[1:]:
+        num = Fraction(num)
         if operator == '+':
-            result += float(num)
+            result += num
         elif operator == '-':
-            result -= float(num)
+            result -= num
         elif operator == '*':
-            result *= float(num)
+            result *= num
         elif operator == '/':
-            try:
-                if result % float(num) == 0:
-                    result = int(result / float(num))
-                else:
-                    result = "(" + str(result) + "/" + str(num) + ")" # find a way to simplify
-            except ZeroDivisionError:
-                return "0"
+            result /= num
+        elif operator == '^':
+            result = result ** float(num)  # Using float for power to handle fractional exponents
     return str(result)
 
 def simplify(derivat: list) -> list:
@@ -337,8 +394,8 @@ def simplify(derivat: list) -> list:
     for i in range(len(derivat)):
         if derivat[i] in OPERATORS:
             lgb = LGB(derivat, i)
-            numbers_to_calculate = derivat[lgb:i]
-            result = calculate(numbers_to_calculate, derivat[i])
+            numbers = derivat[lgb:i]
+            result = calculate(numbers, derivat[i])
             simplified = derivat[:lgb] + [result] + derivat[i+1:]
             return simplify(simplified)
 
@@ -409,7 +466,9 @@ def main():
         log("RPN: ", postfix)
         # derivative(0, len(postfix)-1, postfix)
         # log("RPNderivat: ", derivat)
-        infix_notation = algebric_notation(simplify(postfix))
+        simplified = simplify(postfix)
+        log("Simplified: ", simplified)
+        infix_notation = algebric_notation(simplified)
         print("Derivative: ", infix_notation, "\n\n", 30*'-', "\n")
         derivat.clear()
 
