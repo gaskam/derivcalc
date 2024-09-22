@@ -5,9 +5,9 @@ if __name__ == "__main__":
 else:
     devMode = False
 
-precedences = {'+': 1, '-': 1, '*': 2, '/': 2, '^': 3}
-functions = ('sin', 'cos', 'tan', 'log', 'exp', 'sqrt', 'ctg', 'neg')
-operators = ('+', '-', '*', '/', '^')
+PRECEDENCES = {'+': 1, '-': 1, '*': 2, '/': 2, '^': 3}
+FUNCTIONS = ('sin', 'cos', 'tan', 'log', 'exp', 'sqrt', 'ctg', 'neg')
+OPERATORS = ('+', '-', '*', '/', '^')
 
 derivat = []
 
@@ -16,10 +16,10 @@ def log(*values, sep = " ", end = "\n"):
         print(*values, sep=sep, end=end)
 
 def isOperator(token):
-    return token in precedences
+    return token in PRECEDENCES
 
 def isFunction(token):
-    return token in functions
+    return token in FUNCTIONS
 
 def isNumber(token):
     if isinstance(token, list):
@@ -32,9 +32,17 @@ def isNumber(token):
         return True
     except ValueError:
         return False
+    except TypeError:
+        return False
 
 def isVariable(token):
-    return token.isalpha() and not isFunction(token)
+    try:
+        if token.isalpha() and not isFunction(token) and not isOperator(token):
+            return True
+        else:
+            return False
+    except AttributeError:
+        return False
 
 def tokenize(expression: str) -> list[str]:
     tokens = []
@@ -103,8 +111,8 @@ def shuntingYard(tokens):
                 output.append(operators.pop())
         elif isOperator(token):
             while operators and operators[-1] != '(' and (
-                (isOperator(operators[-1]) and precedences[operators[-1]] > precedences[token]) or
-                (precedences[operators[-1]] == precedences[token] and token != '^')
+                (isOperator(operators[-1]) and PRECEDENCES[operators[-1]] > PRECEDENCES[token]) or
+                (PRECEDENCES[operators[-1]] == PRECEDENCES[token] and token != '^')
             ):
                 output.append(operators.pop())
             operators.append(token)
@@ -131,9 +139,9 @@ def lgb(postfix: list, index: int) -> int:
     i = index
     while remaining > 0:
         remaining -= 1
-        if postfix[i] in functions:
+        if postfix[i] in FUNCTIONS:
             remaining += 1
-        elif postfix[i] in operators:
+        elif postfix[i] in OPERATORS:
             remaining += 2
         i -= 1
 
@@ -144,7 +152,7 @@ def gr(postfix: list, index: int) -> int:
 
 def derivative(lwb: int, upb: int, postfix: list) -> list:
     global derivat
-    if postfix[upb] in functions:
+    if postfix[upb] in FUNCTIONS:
         if postfix[upb] == 'sin':
             derivat.extend(postfix[lwb:upb])
             derivat.append("cos")
@@ -182,7 +190,7 @@ def derivative(lwb: int, upb: int, postfix: list) -> list:
             derivative(lwb, upb-1, postfix)
             if derivat[-1] != "0":
                 derivat.append("neg")
-    elif postfix[upb] in operators:
+    elif postfix[upb] in OPERATORS:
         middle = lgb(postfix, upb - 1)
         if postfix[upb] == '+' or postfix[upb] == '-':
             derivative(lwb, middle - 1, postfix)
@@ -389,45 +397,79 @@ def calculate(numbers: list, operator: str) -> str:
             result = result ** float(num)
     return str(result)
 
-def calcList(var: list, operator: str, nums=None, variables=None) -> list:
+def calcList(terms: list, operator: str, nums=None, variables=None) -> list:
     if nums is None:
         nums = []
     if variables is None:
         variables = []
 
-    try:
-        if len(var) > 2 and isinstance(var[1], list):
-            nums.append(var[0])
-            calcList(var[1], operator, nums, variables)
-            variables.append(var[2])
-        else:
-            nums.append(var[0])
-            variables.extend(var[1:])
-    except IndexError:
-        nums.append(var[0])
-        variables.extend(var[1:])
-
-    log("List: ", var)
+    log("List: ", terms)
     log("Numbers:", nums)
     log("Variables:", variables)
 
-    if len(variables) == 1:
-        variables = variables[0]
+    if operator == '*' or operator == '/':
+        for term in terms:
+            if isinstance(term, list):
+                nums.append(term[0])
+                try:
+                    if isinstance(term[1], list):
+                        calcList(term[1], operator, nums, variables)
+                    else:
+                        variables.append(term[1])
+                except IndexError:
+                    pass
+            elif isNumber(term):
+                nums.append(term)
+            else:
+                variables.append(term)
 
-    return [calculate(nums, operator), variables]
+        if len(variables) == 0:
+            return [calculate(nums, operator)]
+        elif len(variables) > 1:
+            if all(var == variables[0] for var in variables):
+                return [calculate(nums, operator), str(variables[0]) + '^' + str(len(variables))]
+
+        return [calculate(nums, operator), *variables]
+
+    elif operator == '+' or operator == '-':
+        pass # TODO Need to be implemented
 
 def simplify(derivat: list) -> list:
     if len(derivat) <= 2:
         return derivat
 
     for i in range(len(derivat)):
-        if derivat[i] in operators:
+        if derivat[i] in OPERATORS:
             lgbIndex = lgb(derivat, i)
             terms = derivat[lgbIndex:i]
-            if derivat[i] in operators:
+            log("Terms: ", terms)
+            if derivat[i] == '^':
+                if len(terms) == 2:
+                    if terms[1] == "0":
+                        return ["1"]
+                    elif terms[1] == "1":
+                        return terms[0]
+                    elif terms[0] == "0":
+                        return ["0"]
+                    elif terms[0] == "1":
+                        return ["1"]
+                    elif isNumber(terms):
+                        result = calculate(terms, derivat[i])
+                        simplified = derivat[:lgbIndex] + [result] + derivat[i+1:]
+                        return simplify(simplified)
+                    else:                      
+                        result = []
+                        result.extend((simplify(terms[0]), simplify(terms[1]), derivat[i]))
+
+                        log("Result: ", result)
+                        
+                        simplified = derivat[:lgbIndex] + [result] + derivat[i+1:]
+                        return simplify(simplified)
+                
+            elif derivat[i] in OPERATORS:
                 if derivat[i] == '*' and "0" in terms:
                     return ["0"]
-                elif all(isNumber(term) for term in terms):
+                elif isNumber(terms):
                     result = calculate(terms, derivat[i])
                     simplified = derivat[:lgbIndex] + [result] + derivat[i+1:]
                     return simplify(simplified)
@@ -436,52 +478,23 @@ def simplify(derivat: list) -> list:
                     numbers = []
                     for term in terms:
                         if isinstance(term, list):
-                            result = calcList(term, derivat[i])
-                            numbers.append(result[0])
-                            variables.extend(result[1] if isinstance(result[1], list) else [result[1]])
+                            result = calcList(terms, derivat[i])
+                            simplified = derivat[:lgbIndex] + [result] + derivat[i+1:]
+                            return simplify(simplified)
                         elif isVariable(term):
                             variables.append(term)
                         else:
                             numbers.append(term)
                     
-                    if len(numbers) == 0:
-                        numbers = ["1"] if derivat[i] in ('*', '/') else ["0"]
+                    if len(numbers) == 0 and derivat[i] in ('*', '/'):
+                        numbers = ["1"]
                     
-                    numericResult = calculate(numbers, derivat[i])
+                    result = []
+                    result.extend((calculate(numbers, derivat[i]), *variables, derivat[i]))
+
+                    log("Result: ", result)
                     
-                    if derivat[i] in ('+', '-'):
-                        if variables:
-                            result = [[numericResult] + variables + [derivat[i]]]  
-                        else:
-                            result = [numericResult]
-                    elif derivat[i] == '^':
-                        if len(variables) == 1:
-                            result = [[numericResult] + [f"{variables[0]}^{terms[-1]}"]]
-                        else:
-                            result = [f"({numericResult})^{terms[-1]}"]
-                    else:  
-                        if len(variables) == 0:
-                            result = [numericResult]
-                        elif len(variables) == 1:
-                            result = [[numericResult] + variables + [derivat[i]]]  
-                        else:
-                            varCounts = {}
-                            for var in variables:
-                                if var in varCounts:
-                                    varCounts[var] += 1
-                                else:
-                                    varCounts[var] = 1
-                            
-                            combinedVars = []
-                            for var, count in varCounts.items():
-                                if count == 1:
-                                    combinedVars.append(var)
-                                else:
-                                    combinedVars.append(f"{var}^{count}")
-                            
-                            result = [[numericResult] + [''.join(combinedVars)] + [derivat[i]]]  
-                    
-                    simplified = derivat[:lgbIndex] + result + derivat[i+1:]
+                    simplified = derivat[:lgbIndex] + [result] + derivat[i+1:]
                     return simplify(simplified)
 
     return derivat
@@ -505,7 +518,7 @@ def algebricNotation(derivat: list) -> str:
                         stack.append(f"{coefficient}*{variable}")
             else:
                 stack.append(algebricNotation(token))
-        elif token in operators:
+        elif token in OPERATORS:
             b = stack.pop()
             a = stack.pop()
             if token == '+':
@@ -538,7 +551,7 @@ def algebricNotation(derivat: list) -> str:
                     stack.append(a)
                 else:
                     stack.append(f"{a}^{b}")
-        elif token in functions:
+        elif token in FUNCTIONS:
             if token == 'neg':
                 a = stack.pop()
                 stack.append(f"-{a}")
@@ -564,7 +577,7 @@ def main():
         log("RPN: ", postfix)
         derivative(0, len(postfix)-1, postfix)
         log("RPNderivat: ", derivat)
-        simplified = simplify(postfix)
+        simplified = simplify(postfix) # derivat
         log("Simplified: ", simplified)
         infixNotation = algebricNotation(derivat)
         print("Derivative: ", infixNotation, "\n\n", 30*'-', "\n")
