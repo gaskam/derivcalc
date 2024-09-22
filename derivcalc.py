@@ -193,10 +193,10 @@ def derivative(lwb: int, upb: int, postfix: list) -> list:
                 derivat.pop()
             elif derivat[prevIndex2] == "0":
                 derivat.pop(prevIndex2)
-            elif derivat[index] == "0":
-                derivat.pop(index)
                 if postfix[upb] == "-":
                     derivat.append("neg")
+            elif derivat[index] == "0":
+                derivat.pop(index)
             else:
                 derivat.append(postfix[upb])
 
@@ -241,6 +241,8 @@ def derivative(lwb: int, upb: int, postfix: list) -> list:
 
             if zeros == 0:
                 derivat.append("+")
+            elif zeros == 2:
+                derivat.append("0")
 
         elif postfix[upb] == '/':
             assert postfix[upb - 1] != "0" 
@@ -249,9 +251,9 @@ def derivative(lwb: int, upb: int, postfix: list) -> list:
             firstHalf = ""
 
             prevIndex1 = len(derivat) - 1
-            derivat.extend(postfix[lwb:middle])
+            derivat.extend(postfix[middle:upb])
             prevIndex2 = len(derivat) - 1
-            derivative(middle, upb - 1, postfix)
+            derivative(lwb, middle - 1, postfix)
 
             index = len(derivat) - 1
 
@@ -269,9 +271,9 @@ def derivative(lwb: int, upb: int, postfix: list) -> list:
             ind1 = len(derivat) - 1
 
             prevIndex1 = len(derivat) - 1
-            derivative(lwb, middle-1, postfix)
+            derivative(middle, upb - 1, postfix)
             prevIndex2 = len(derivat) - 1
-            derivat.extend(postfix[middle:upb])
+            derivat.extend(postfix[lwb:middle])
 
             index = len(derivat) - 1
 
@@ -285,12 +287,14 @@ def derivative(lwb: int, upb: int, postfix: list) -> list:
             else:
                 derivat.append("*")
 
-            if firstHalf == "0":
+            if firstHalf == "0" and derivat[ind1 + 1:] != []:
                 derivat.append("neg")
-            elif not derivat[-1] == "0":
+            elif not derivat[ind1 + 1:] == [] and firstHalf != "0":
                 derivat.append("-")
 
-            if postfix[upb - 1] != "1":
+            if zeros == 2:
+                derivat.append("0")
+            elif postfix[upb - 1] != "1":
                 derivat.extend(postfix[middle:upb])
                 derivat.extend(("2", "^", "/"))
 
@@ -558,11 +562,11 @@ def main():
         tokensWithImplicitMult = addImplicitMultiplication(tokens)
         postfix = shuntingYard(tokensWithImplicitMult)
         log("RPN: ", postfix)
-        # derivative(0, len(postfix)-1, postfix)
-        # log("RPNderivat: ", derivat)
+        derivative(0, len(postfix)-1, postfix)
+        log("RPNderivat: ", derivat)
         simplified = simplify(postfix)
         log("Simplified: ", simplified)
-        infixNotation = algebricNotation(simplified)
+        infixNotation = algebricNotation(derivat)
         print("Derivative: ", infixNotation, "\n\n", 30*'-', "\n")
         derivat.clear()
 
