@@ -429,10 +429,22 @@ def calcList(terms: list, operator: str, nums=None, variables=None) -> list:
             if all(var == variables[0] for var in variables):
                 return [calculate(nums, operator), str(variables[0]) + '^' + str(len(variables))]
 
-        return [calculate(nums, operator), *variables]
+        return [calculate(nums, operator), ''.join(variables)]
 
     elif operator == '+' or operator == '-':
-        pass # TODO Need to be implemented
+        if all(isinstance(term, list) for term in terms):
+            if terms[0][1] == terms[1][1]:
+                calc = calculate([terms[0][0], terms[1][0]], operator)
+                if calc == "0":
+                    return ["0"]
+                elif calc == "1":
+                    return [terms[0][1]]
+                else:
+                    return [calc, terms[0][1], '*']
+            else:
+                return [terms[0], terms[1], operator]
+        else:
+            return [terms[0], terms[1], operator]
 
 def simplify(derivat: list) -> list:
     if len(derivat) <= 2:
@@ -577,7 +589,7 @@ def main():
         log("RPN: ", postfix)
         derivative(0, len(postfix)-1, postfix)
         log("RPNderivat: ", derivat)
-        simplified = simplify(postfix) # derivat
+        simplified = simplify(derivat)
         log("Simplified: ", simplified)
         infixNotation = algebricNotation(derivat)
         print("Derivative: ", infixNotation, "\n\n", 30*'-', "\n")
