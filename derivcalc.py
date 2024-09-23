@@ -403,10 +403,6 @@ def calcList(terms: list, operator: str, nums=None, variables=None) -> list:
     if variables is None:
         variables = []
 
-    log("List: ", terms)
-    log("Numbers:", nums)
-    log("Variables:", variables)
-
     if operator == '*' or operator == '/':
         for term in terms:
             if isinstance(term, list):
@@ -427,7 +423,7 @@ def calcList(terms: list, operator: str, nums=None, variables=None) -> list:
             return [calculate(nums, operator)]
         elif len(variables) > 1:
             if all(var == variables[0] for var in variables):
-                return [calculate(nums, operator), str(variables[0]) + '^' + str(len(variables))]
+                return [calculate(nums, operator), '(' + str(variables[0]) + '^' + str(len(variables)) + ')']
 
         return [calculate(nums, operator), ''.join(variables)]
 
@@ -454,7 +450,6 @@ def simplify(derivat: list) -> list:
         if derivat[i] in OPERATORS:
             lgbIndex = lgb(derivat, i)
             terms = derivat[lgbIndex:i]
-            log("Terms: ", terms)
             if derivat[i] == '^':
                 if len(terms) == 2:
                     if terms[1] == "0":
@@ -472,8 +467,6 @@ def simplify(derivat: list) -> list:
                     else:                      
                         result = []
                         result.extend((simplify(terms[0]), simplify(terms[1]), derivat[i]))
-
-                        log("Result: ", result)
                         
                         simplified = derivat[:lgbIndex] + [result] + derivat[i+1:]
                         return simplify(simplified)
@@ -503,17 +496,25 @@ def simplify(derivat: list) -> list:
                     
                     result = []
                     result.extend((calculate(numbers, derivat[i]), *variables, derivat[i]))
-
-                    log("Result: ", result)
                     
                     simplified = derivat[:lgbIndex] + [result] + derivat[i+1:]
                     return simplify(simplified)
 
     return derivat
 
+def flattenList(nestedList):
+    flattened = []
+    for item in nestedList:
+        if isinstance(item, list):
+            flattened.extend(flattenList(item))
+        else:
+            flattened.append(item)
+    return flattened
+
 def algebricNotation(derivat: list) -> str:
+    flattened = flattenList(derivat)
     stack = []
-    for token in derivat:
+    for token in flattened:
         if isinstance(token, list):
             if len(token) >= 2 and isNumber(token[0]):
                 coefficient = token[0]
@@ -544,6 +545,10 @@ def algebricNotation(derivat: list) -> str:
                     stack.append(b)
                 elif b == "1":
                     stack.append(a)
+                elif isVariable(a) or isVariable(b):
+                    stack.append(f"{a}{b}")
+                elif isNumber(a) and isNumber(b):
+                    stack.append(str(Fraction(a) * Fraction(b)))
                 else:
                     stack.append(f"{a}*{b}")
             elif token == '/':
@@ -591,7 +596,7 @@ def main():
         log("RPNderivat: ", derivat)
         simplified = simplify(derivat)
         log("Simplified: ", simplified)
-        infixNotation = algebricNotation(derivat)
+        infixNotation = algebricNotation(simplified)
         print("Derivative: ", infixNotation, "\n\n", 30*'-', "\n")
         derivat.clear()
 
