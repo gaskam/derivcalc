@@ -324,6 +324,77 @@ def derivative(lwb: int, upb: int, postfix: list) -> list:
         else:
             derivat.append("0")               
 
+# def initFraction(numerator, denominator=1):
+#     if isinstance(numerator, str) and '/' in numerator:
+#         numerator, denominator = map(int, numerator.split('/'))
+#     else:
+#         numerator = int(numerator)
+#         denominator = int(denominator)
+    
+#     if denominator == 0:
+#         raise ValueError("Denominator cannot be zero")
+    
+#     if denominator < 0:
+#         numerator, denominator = -numerator, -denominator
+    
+#     common = gcd(numerator, denominator)
+#     return numerator // common, denominator // common
+
+# def addFractions(otherFrac, selfFrac):
+#     if isinstance(otherFrac, (int, float)):
+#         otherFrac = initFraction(otherFrac)
+#     return initFraction(otherFrac[0] * selfFrac[1] + selfFrac[0] * otherFrac[1], otherFrac[1] * selfFrac[1])
+
+# def subFractions(otherFrac, selfFrac):
+#     if isinstance(otherFrac, (int, float)):
+#         otherFrac = initFraction(otherFrac)
+#     return initFraction(selfFrac[0] * otherFrac[1] - otherFrac[0] * selfFrac[1], selfFrac[1] * otherFrac[1])
+
+# def mulFractions(otherFrac, selfFrac):
+#     if isinstance(otherFrac, (int, float)):
+#         otherFrac = initFraction(otherFrac)
+#     return initFraction(selfFrac[0] * otherFrac[0], selfFrac[1] * otherFrac[1])
+
+# def trueDivFractions(otherFrac, selfFrac):
+#     if isinstance(otherFrac, (int, float)):
+#         otherFrac = initFraction(otherFrac)
+#     return initFraction(selfFrac[0] * otherFrac[1], selfFrac[1] * otherFrac[0])
+
+# def powFractions(frac, power):
+#     if isinstance(power, int):
+#         if power >= 0:
+#             return initFraction(frac[0] ** power, frac[1] ** power)
+#         else:
+#             return initFraction(frac[1] ** -power, frac[0] ** -power)
+#     else:
+#         return pow(float(frac[0] / frac[1]), power)
+    
+# def floatFraction(frac):
+#     return frac[0] / frac[1]
+
+# def strFraction(frac):
+#     if frac[1] == 1:
+#         return str(frac[0])
+#     return str(frac[0]) + '/' + str(frac[1])
+
+
+
+# def calculate(numbers: list, operator: str) -> str:
+#     result = initFraction(numbers[0])
+#     for num in numbers[1:]:
+#         num = initFraction(num)
+#         if operator == '+':
+#             addFractions(result, num)
+#         elif operator == '-':
+#             subFractions(result, num)
+#         elif operator == '*':
+#             mulFractions(result, num)
+#         elif operator == '/':
+#             trueDivFractions(result, num)
+#         elif operator == '^':
+#             result = powFractions(result, float(num))
+#     return str(result)
+
 class Fraction:
     def __init__(self, numerator, denominator=1):
         if isinstance(numerator, str) and '/' in numerator:
@@ -379,7 +450,7 @@ class Fraction:
     def __str__(self):
         if self.denominator == 1:
             return str(self.numerator)
-        return f"{self.numerator}/{self.denominator}"
+        return str(self.numerator) + '/' + str(self.denominator)
 
 def calculate(numbers: list, operator: str) -> str:
     result = Fraction(numbers[0])
@@ -495,7 +566,7 @@ def simplify(derivat: list) -> list:
                         numbers = ["1"]
                     
                     result = []
-                    result.extend((calculate(numbers, derivat[i]), *variables, derivat[i]))
+                    result.extend((calculate(numbers, derivat[i]), variables, derivat[i]))
                     
                     simplified = derivat[:lgbIndex] + [result] + derivat[i+1:]
                     return simplify(simplified)
@@ -523,21 +594,21 @@ def algebricNotation(derivat: list) -> str:
                 if coefficient == "1" and operator == '*':
                     stack.append(variable)
                 elif coefficient == "-1" and operator == '*':
-                    stack.append(f"-{variable}")
+                    stack.append("-" + variable)
                 else:
                     if operator in ('+', '-'):
-                        stack.append(f"{coefficient}{operator}{variable}")
+                        stack.append(coefficient + operator + variable)
                     else:
-                        stack.append(f"{coefficient}*{variable}")
+                        stack.append(coefficient + '*' + variable)
             else:
                 stack.append(algebricNotation(token))
         elif token in OPERATORS:
             b = stack.pop()
             a = stack.pop()
             if token == '+':
-                stack.append(f"{a} + {b}")
+                stack.append(a + " + " + b)
             elif token == '-':
-                stack.append(f"{a} - {b}")
+                stack.append(a + " - " + b)
             elif token == '*':
                 if a == "0" or b == "0":
                     stack.append("0")
@@ -546,11 +617,11 @@ def algebricNotation(derivat: list) -> str:
                 elif b == "1":
                     stack.append(a)
                 elif isVariable(a) or isVariable(b):
-                    stack.append(f"{a}{b}")
+                    stack.append(a + b)
                 elif isNumber(a) and isNumber(b):
                     stack.append(str(Fraction(a) * Fraction(b)))
                 else:
-                    stack.append(f"{a}*{b}")
+                    stack.append(a + '*' + b)
             elif token == '/':
                 assert b != "0"
                 if a == "0":
@@ -558,7 +629,7 @@ def algebricNotation(derivat: list) -> str:
                 elif b == "1":
                     stack.append(a)
                 else:
-                    stack.append(f"{a}/{b}")
+                    stack.append(a + '/' + b)
             elif token == '^':
                 if a == "0":
                     stack.append("0")
@@ -567,14 +638,14 @@ def algebricNotation(derivat: list) -> str:
                 elif b == "1":
                     stack.append(a)
                 else:
-                    stack.append(f"{a}^{b}")
+                    stack.append(a + '^' + b)
         elif token in FUNCTIONS:
             if token == 'neg':
                 a = stack.pop()
-                stack.append(f"-{a}")
+                stack.append("-" + a)
             else:
                 a = stack.pop()
-                stack.append(f"{token}({a})")
+                stack.append(token + '(' + a + ')')
         else:
             stack.append(token)
     
