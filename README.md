@@ -97,4 +97,4 @@ This project is designed specifically for the **Numworks calculator** ^^
 
 This project is licensed under **Gaskam.com** © 2024. All rights reserved.
 
-For more information, visit our [GitHub page](https://github.com/gaskam-com/derivcalc).
+For more information, visit our [GitHub page](https://github.com/gaskam/derivcalc).
